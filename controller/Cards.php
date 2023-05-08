@@ -1,6 +1,8 @@
 <?php
 require_once("RestController.php");
 require_once("helper.php");
+require_once("Request.php");
+
 class Cards extends RestController
 {
     protected function init()
@@ -9,27 +11,27 @@ class Cards extends RestController
         parent::init();
     }
 
-    public function Registration($request)
+    public function Registration(Request $request)
     {
-        if($_SERVER["REQUEST_METHOD"] != "POST")
+        if(!$request->isPOST())
             $this->wrongMethod();
         $regCode = helper::GenerateUNIQUE($request->pan);
         $arr = ["registrationCode" => $regCode];
         $this->returnResponse($arr);
     }
 
-    public function Verify($request)
+    public function Verify(Request $request)
     {
-        if($_SERVER["REQUEST_METHOD"] != "POST")
+        if(!$request->isPOST())
             $this->wrongMethod();
         $token = substr(helper::GenerateUNIQUE($request->registrationCode), 0 , 26);
         $arr = ["token" => $token, "bean" => "UMaAIKKIkknjWEXJUfPxxQHeWKEJ", "processingType" => "UZCARD"];
         $this->returnResponse($arr);
     }
 
-    public function Info($token)
+    public function Info(Request $request)
     {
-        if($_SERVER['REQUEST_METHOD'] != "GET")
+        if(!$request->isGET())
             $this->wrongMethod();
         $arr = [
             "bean" => "QIn",
@@ -49,9 +51,9 @@ class Cards extends RestController
         $this->returnResponse($arr);
     }
 
-    public function Balance($token)
+    public function Balance(Request $request)
     {
-        if($_SERVER['REQUEST_METHOD'] != "GET")
+        if(!$request->isGET())
             $this->wrongMethod();
         $arr = [
             "balance" => 958000,
@@ -62,27 +64,27 @@ class Cards extends RestController
         $this->returnResponse($arr);
     }
 
-    public function Delete($token)
+    public function Delete(Request $request)
     {
-        if($_SERVER['REQUEST_METHOD'] != "DELETE")
+        if(!$request->isDELETE())
             $this->wrongMethod();
         $arr = null;
         header('HTTP/1.1 204 No Content');
         $this->returnResponse($arr);
     }
 
-    public function Reactivate($request)
+    public function Reactivate(Request $request)
     {
-        if($_SERVER["REQUEST_METHOD"] != "POST")
+        if(!$request->isPOST())
             $this->wrongMethod();
         $regCode = helper::GenerateUNIQUE($request->phoneNumber);
         $arr = ["registrationCode" => $regCode];
         $this->returnResponse($arr);
     }
 
-    public function Write_off($request)
+    public function Write_off(Request $request)
     {
-        if($_SERVER["REQUEST_METHOD"] != "POST")
+        if(!$request->isPOST())
             $this->wrongMethod();
         $arr = null;
         $this->returnResponse($arr);

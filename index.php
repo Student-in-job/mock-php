@@ -4,11 +4,28 @@
 
     $router = new Route();
     $request = new Request($_REQUEST);
-    if(isJSON())
+    $server = strtolower($_SERVER["SERVER_SOFTWARE"]);
+    if(strpos($server, 'nginx') !== false)
     {
-        $data = file_get_contents('php://input');
-        $request->addJSON($data);
+        if(isJSON())
+        {
+            $data = file_get_contents('php://input');
+            $request->addJSON($data);
+        }
     }
+    elseif (strpos($server, 'apache') !== false)
+    {
+        if($request->countElements() == 0)
+        {
+            if($request->isPOST() || $request->isPUT())
+            {
+                $data = file_get_contents('php://input');
+                $request->addJSON($data);
+            }
+        }
+    }
+
+
 
     if($router->hasRoute($_SERVER["REQUEST_URI"]))
     {
@@ -18,7 +35,8 @@
     {
         $params = explode('/', $_SERVER["REQUEST_URI"]);
         $token = $params[sizeof($params) - 1];
-        callFunction($router->getParamRoute($_SERVER["REQUEST_URI"]), $token);
+        $request->token = $token;
+        callFunction($router->getParamRoute($_SERVER["REQUEST_URI"]), $request);
     }
     else
     {
@@ -43,10 +61,13 @@
         echo $object->$methodName($request);
     }
 
-    function printVariables(){
-        echo "OK <br/>";
-        echo "Server variables:<br/>";
-        foreach($_SERVER as $mkey => $mvalue){
+    function printVariables($variable){
+        if(!$variable)
+        {
+            echo "empty<br/>";
+            return;
+        }
+        foreach($variable as $mkey => $mvalue){
             echo $mkey . " = " . $mvalue . "<br/>";
         }
     }

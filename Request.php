@@ -2,6 +2,7 @@
 class Request
 {
     private $_array = array();
+    private $_method = "GET";
 
     private function parseArray($array)
     {
@@ -15,6 +16,7 @@ class Request
         {
             $this->parseArray($request);
         }
+        $this->_method = $_SERVER["REQUEST_METHOD"];
     }
 
     public function addJSON($data)
@@ -29,5 +31,34 @@ class Request
             return null;
         return $this->_array[$name];
     }
+
+    public function __set($name, $value)
+    {
+        $this->_array[$name] = $value;
+    }
+
+    public function countElements()
+    {
+        return count($this->_array);
+    }
+
+    public function isGET():bool
+    {
+        return ($this->_method == "GET");
+    }
+
+    public function isPOST():bool
+    {
+        return ($this->_method == "POST");
+    }
+    public function isPUT():bool
+    {
+        return ($this->_method == "PUT");
+    }
+    public function isDELETE():bool
+    {
+        return ($this->_method == "DELETE");
+    }
+
 }
 ?>
