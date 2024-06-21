@@ -1,10 +1,12 @@
 <?php
     require_once("Request.php");
     require_once("Route.php");
+    require_once ("DBConnection.php");
 
     $router = new Route();
     $request = new Request($_REQUEST);
     $server = strtolower($_SERVER["SERVER_SOFTWARE"]);
+    $connection = new DBConnection("dbwriter", "password", "test");
     if(strpos($server, 'nginx') !== false)
     {
         if(isJSON())
@@ -24,8 +26,6 @@
             }
         }
     }
-
-
 
     if($router->hasRoute($_SERVER["REQUEST_URI"]))
     {

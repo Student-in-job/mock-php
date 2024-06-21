@@ -4,7 +4,9 @@ class Route{
         "/cards/registration"   => "Cards/Registration",
         "/cards/verify"         => "Cards/Verify",
         "/cards/reactivation"   => "Cards/Reactivate",
-        "/cards/write-off"      => "Cards/Write_off"
+        "/cards/write-off"      => "Cards/Write_off",
+        "/auth/test"            => "Auth/Test",
+        "/curl/getUrl"          => "CurlTest/GetFromUrl"
     ];
 
     private $_paramRoute = [

@@ -6,8 +6,9 @@ class DBConnection
     protected string $_port;
     protected string $_user;
     protected string $_password;
-    protected mysqli $_connection;
+    protected PDO $_connection;
     protected string $_database;
+    protected string $_driver;
 
     /**
      * @param string $user User's name
@@ -16,7 +17,7 @@ class DBConnection
      * @param string $host Host of database (default 127.0.0.1)
      * @param string $port Port of database (default 3306)
      */
-    public function __construct(string $user, string $password, string $database = "",
+    public function __construct(string $user, string $password, string $database = "", $driver = "mysql",
                                 string $host = "127.0.0.1", string $port = "3306")
     {
         $this->_user = $user;
@@ -24,37 +25,52 @@ class DBConnection
         $this->_host = $host;
         $this->_port = $port;
         $this->_database = $database;
+        $this->_driver = $driver;
     }
     /**
      * @return void
      */
-    public function Open(): void
+    final protected function Open(): void
     {
-        $this->_connection = new mysqli(
-            $this->_host,
-            $this->_user,
-            $this->_password,
-            $this->_database,
-            $this->_port,
-        );
-        if ($this->_connection->connect_errno)
+        $connectionString = $this->_driver . ":" . "host=" . $this->_host  . ";port=" .
+            $this->_port . ";dbname=" .  $this->_database;
+        try
         {
-            throw new RuntimeException('Connect exception', $this->_connection->error);
+            $this->_connection = new PDO($connectionString, $this->_user, $this->_password);
         }
-    }
-    /**
-     * @return void
-     */
-    public function Close(): void
-    {
-        $this->_connection->close();
+        catch(PDOException $exp)
+        {
+            throw new RuntimeException('Connect exception', $exp->getCode()  .  ":  ".  $exp->getMessage());
+        }
     }
 
     /**
-     * @return mysqli
+     * @param string $query SQL query
+     * @param array|null $params params to be found in query
+     * @param bool $transactional Does the transaction needed for several queries
+     * @return PDOStatement
      */
-    public function getConnection(): mysqli
+    public function ExecuteQuery(string $query, array $params = null, bool $transactional = false): PDOStatement
     {
-        return $this->_connection;
+        $pdoStatement = null;
+        try {
+            $this->Open();
+            $pdoStatement =  $this->_connection->prepare($query);
+            if (isset($params))
+                foreach ($params as $param => $value) {
+                    $pdoStatement->bindParam(":" .  $param, $value);
+                }
+            if (!$transactional)
+                $this->_connection->beginTransaction();
+            $result = $pdoStatement->execute();
+            if (!$transactional)
+                $this->_connection->commit();
+        }
+        catch (PDOException $exception) {
+            if (!$transactional)
+                $this->_connection->rollBack();
+            throw new RuntimeException("WRONG SQL", 180001);
+        }
+        return $pdoStatement;
     }
 }
