@@ -83,6 +83,7 @@ class ContractModel
     public function setNewData(ContractModelRow $record): void
     {
         $this->total_debt = $record->total_debt;
+        $this->total = $record->total;
         $this->acc_12401 = $record->acc_12401;
         $this->acc_12405 = $record->acc_12405;
         $this->acc_12499 = $record->acc_12499;
@@ -121,10 +122,11 @@ class Organization
     public $type = 'MKO';
     public $nko = '06098';
     public $name = 'ООО МФО «SHAFFOF-MOLIYA»';
+    public $bank = '00974';
     public $payment_account = '10509000605570410001';
-    public $issue_account = '10513000905570410001';
+    public $issue_account = '10503000905570410003';
     public $purposeTypes = [
-        '12401-10513' => 'Выдача микрозайма',
+        '12401-10503' => 'Выдача микрозайма',
         '12405-10509' => 'Отмена платежа',
         '12401-10509' => 'Отмена платежа',
         '12405-12401' => 'Просрочка микрозайма',

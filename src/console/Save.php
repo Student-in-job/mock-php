@@ -2,6 +2,7 @@
 require_once "DTOModels.php";
 require_once "Loader.php";
 require_once "Report.php";
+require_once "../Storage.php";
 
 $accounts = array(
     '12401' => '12401000199132657015',
@@ -53,7 +54,11 @@ foreach ($lines as $line)
     }
 }
 
-$out_file = fopen( $output_folder . sprintf("contract_%d.txt", 3794010), "w");
+$out_file = $output_folder . sprintf("contract_%d.txt", 3794010);
+$out_file2 = $output_folder . sprintf("contract_016_%d.txt", 3794010);
+$file_storage = new FileStorage($out_file);
+$file_storage2 = new FileStorage($out_file2);
+
 
 $shafof = new Organization();
 $contract = null;
@@ -65,13 +70,23 @@ foreach ($records as $report_day)
         $contract->setAccounts($accounts);
         $user_object->addContract($contract->getId());
     }
-    $report = new ReportAccountBalance($shafof);
-    $report->GenerateAccounts($contract, $report_day);
-    $contract->setNewData($report_day);
+    $report_data = new ReportAccountBalance($shafof, $contract->getId());
+    $report_data->GenerateReport($contract, $report_day);
+    $report = ['security' => ['pLogin' => $shafof->login, 'pPassword' => $shafof->password], 'data' => $report_data];
 
     $json_report = json_encode($report);
-    fwrite($out_file, $json_report);
-    fwrite($out_file, PHP_EOL);
+    $file_storage->addLine($json_report, true);
+
+    $report_data2 = new ReportPaymentDocuments($shafof, $contract->getId());
+    $report_data2->setUser($user_object);
+    $report_data2->GenerateReport($contract, $report_day);
+    $report2 = ['security' => ['pLogin' => $shafof->login, 'pPassword' => $shafof->password], 'data' => $report_data2];
+
+    $json_report2 = json_encode($report2);
+    $file_storage2->addLine($json_report2, true);
+
+    $contract->setNewData($report_day);
 //    break;
 }
-fclose($out_file);
+$file_storage->flush();
+$file_storage2->flush();
