@@ -4,6 +4,7 @@ const mask12405 = '12405';
 const mask12499 = '12499';
 const mask10509 = '10509';
 const mask10503 = '10503';
+const mask56802 = '56802';
 interface KATMReports
 {
     public function GenerateReport(ContractModel $contract, ContractModelRow $nextRecord);
@@ -60,6 +61,12 @@ class Report
     public function setUser(UserModel $user)
     {
         $this->_user = $user;
+    }
+
+    protected function printState($delta_total, $delta_total_debt, $delta_acc12401, $delta_acc12405, $delta_acc12499)
+    {
+        print ("\r\n");
+        print ('delta_total: '. $delta_total . ' - delta_total_debt: ' . $delta_total_debt . ' - delta_12401: ' . $delta_acc12401 . ' - delta_12405: ' . $delta_acc12405 . ' - delta_12499 :' . $delta_acc12499);
     }
 }
 
@@ -142,6 +149,7 @@ class ReportPaymentDocuments extends Report implements KATMReports
 {
     public $pContractType = '1';
     public $pRepaymentDetArray = array();
+    public $printOut = false;
     private function AddPaymentRecord(PaymentRecord $paymentRecord)
     {
         $this->pRepaymentDetArray[] = $paymentRecord;
@@ -165,8 +173,10 @@ class ReportPaymentDocuments extends Report implements KATMReports
         $delta_acc12401 = $nextRecord->acc_12401 - $contract->acc_12401;
         $delta_acc12405 = $nextRecord->acc_12405 - $contract->acc_12405;
         $delta_acc12499 = $nextRecord->acc_12499 - $contract->acc_12499;
-        print ("\r\n");
-        print ('delta_total: '. $delta_total . ' - delta_total_debt: ' . $delta_total_debt . ' - delta_12401: ' . $delta_acc12401 . ' - delta_12405: ' . $delta_acc12405 . ' - delta_12499 :' . $delta_acc12499);
+        if ($this->printOut)
+        {
+            $this->printState($delta_total, $delta_total_debt, $delta_acc12401, $delta_acc12405, $delta_acc12499);
+        }
         if($delta_total > 0)
         {
             $record = $this->preparePaymentRecord($nextRecord->date);
@@ -177,7 +187,7 @@ class ReportPaymentDocuments extends Report implements KATMReports
             $record->destination = '1007';
             $record->nameA = $this->_mfo->name;
             $record->nameB = $this->_user->fio;
-            $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', mask12401, mask10503)];
+            $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
             $record->summa = round($delta_total * 100);
             $this->AddPaymentRecord($record);
         }
@@ -195,9 +205,10 @@ class ReportPaymentDocuments extends Report implements KATMReports
                     $record->destination = '1007';
                     $record->nameA = $this->_mfo->name;
                     $record->nameB = $this->_user->fio;
-                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', mask12401, mask10509)];
+                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
                     $record->summa = round( $delta_acc12401 * 100);
                     $this->AddPaymentRecord($record);
+                    unset($record);
                 }
                 else
                 {
@@ -209,9 +220,10 @@ class ReportPaymentDocuments extends Report implements KATMReports
                     $record->destination = '1008';
                     $record->nameA = $this->_user->fio;
                     $record->nameB = $this->_mfo->name;
-                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', mask10509, mask12401)];
+                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
                     $record->summa = round(-($delta_acc12405 + $delta_acc12401) * 100);
                     $this->AddPaymentRecord($record);
+                    unset($record);
                 }
             }
             else
@@ -226,9 +238,10 @@ class ReportPaymentDocuments extends Report implements KATMReports
                     $record->destination = '1008';
                     $record->nameA = $this->_user->fio;
                     $record->nameB = $this->_mfo->name;
-                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', mask10509, mask12401)];
+                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
                     $record->summa = round(($delta_total - $delta_total_debt) * 100);
                     $this->AddPaymentRecord($record);
+                    unset($record);
                 }
             }
         }
@@ -246,9 +259,10 @@ class ReportPaymentDocuments extends Report implements KATMReports
                     $record->destination = '1008';
                     $record->nameA = $this->_user->fio;
                     $record->nameB = $this->_mfo->name;
-                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', mask12405, mask10509)];
+                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
                     $record->summa = round($delta_acc12405 * 100);
                     $this->AddPaymentRecord($record);
+                    unset($record);
                 }
                 else
                 {
@@ -260,9 +274,10 @@ class ReportPaymentDocuments extends Report implements KATMReports
                     $record->destination = '1009';
                     $record->nameA = $this->_mfo->name;
                     $record->nameB = $this->_mfo->name;
-                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', mask12405, mask12401)];
+                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
                     $record->summa = round($delta_acc12405 * 100);
                     $this->AddPaymentRecord($record);
+                    unset($record);
                 }
             }
             else
@@ -277,25 +292,12 @@ class ReportPaymentDocuments extends Report implements KATMReports
                     $record->destination = '1009';
                     $record->nameA = $this->_mfo->name;
                     $record->nameB = $this->_mfo->name;
-                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', mask12401, mask12405)];
+                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
                     $record->summa = round($delta_acc12405 * 100);
                     $this->AddPaymentRecord($record);
+                    unset($record);
                 }
                 if($delta_total_debt > 0)
-                {
-                    $record = $this->preparePaymentRecord($nextRecord->date);
-                    $record->accountA = $this->_mfo->payment_account;
-                    $record->accountB = $contract->accounts[mask12405];
-                    $record->coaA = mask10509;
-                    $record->coaB = mask12405;
-                    $record->destination = '1008';
-                    $record->nameA = $this->_user->fio;
-                    $record->nameB = $this->_mfo->name;
-                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', mask10509, mask12405)];
-                    $record->summa = round($delta_acc12405 * 100);
-                    $this->AddPaymentRecord($record);
-                }
-                else
                 {
                     $record = $this->preparePaymentRecord($nextRecord->date);
                     $record->accountA = $contract->accounts[mask12405];
@@ -305,10 +307,59 @@ class ReportPaymentDocuments extends Report implements KATMReports
                     $record->destination = '1007';
                     $record->nameA = $this->_user->fio;
                     $record->nameB = $this->_mfo->name;
-                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', mask12405, mask10509)];
+                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
                     $record->summa = round($delta_acc12405 * 100);
                     $this->AddPaymentRecord($record);
+                    unset($record);
                 }
+                else
+                {
+                    $record = $this->preparePaymentRecord($nextRecord->date);
+                    $record->accountA = $this->_mfo->payment_account;
+                    $record->accountB = $contract->accounts[mask12405];
+                    $record->coaA = mask10509;
+                    $record->coaB = mask12405;
+                    $record->destination = '1008';
+                    $record->nameA = $this->_user->fio;
+                    $record->nameB = $this->_mfo->name;
+                    $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
+                    $record->summa = round(-$delta_acc12405 * 100);
+                    $this->AddPaymentRecord($record);
+                    unset($record);
+                }
+            }
+        }
+        if ($delta_acc12499 != 0)
+        {
+            if ($delta_acc12499 > 0)
+            {
+                $record = $this->preparePaymentRecord($nextRecord->date);
+                $record->accountA = $this->_mfo->reserve_account;
+                $record->accountB = $contract->accounts[mask12499];
+                $record->coaA = mask56802;
+                $record->coaB = mask12499;
+                $record->destination = '1012';
+                $record->nameA = $this->_mfo->name;
+                $record->nameB = $this->_user->fio;
+                $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
+                $record->summa = round($delta_acc12499 * 100);
+                $this->AddPaymentRecord($record);
+                unset($record);
+            }
+            else
+            {
+                $record = $this->preparePaymentRecord($nextRecord->date);
+                $record->accountA = $contract->accounts[mask12499];
+                $record->accountB = $this->_mfo->reserve_account;
+                $record->coaA = mask12499;
+                $record->coaB = mask56802;
+                $record->destination = '1008';
+                $record->nameA = $this->_user->fio;
+                $record->nameB = $this->_mfo->name;
+                $record->purpose = $this->_mfo->purposeTypes[ sprintf('%s-%s', $record->coaA, $record->coaB)];
+                $record->summa = round(-$delta_acc12499 * 100);
+                $this->AddPaymentRecord($record);
+                unset($record);
             }
         }
     }

@@ -125,6 +125,7 @@ class Organization
     public $bank = '00974';
     public $payment_account = '10509000605570410001';
     public $issue_account = '10503000905570410003';
+    public $reserve_account = '56802000505570410001';
     public $purposeTypes = [
         '12401-10503' => 'Выдача микрозайма',
         '12405-10509' => 'Отмена платежа',
